@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\DespesaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::prefix('despesas')->group(function () {
+    Route::get('/', [DespesaController::class, 'index'])->name('despesas.index');
+    Route::get('/{id}', [DespesaController::class, 'show'])->name('despesas.show');
+    Route::post('/', [DespesaController::class, 'store'])->name('despesas.store');
+    Route::put('/{id}', [DespesaController::class, 'update'])->name('despesas.update');
+    Route::delete('/{id}', [DespesaController::class, 'destroy'])->name('despesas.destroy');
 });
