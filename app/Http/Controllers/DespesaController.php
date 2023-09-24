@@ -34,6 +34,9 @@ class DespesaController extends Controller
 
     public function show($id): JsonResponse
     {
+        $despesa = Despesa::findOrFail($id);
+        $this->authorize('view', $despesa);
+
         $despesa = $this->despesaService->getById($id);
 
         if (!$despesa) {
