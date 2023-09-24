@@ -2,35 +2,30 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
-            ]);
-
-            $credentials = $request->only('email', 'password');
-
-            if (!Auth::attempt($credentials)) {
-                throw ValidationException::withMessages([
-                    'email' => ['As credenciais fornecidas são inválidas.'],
-                ]);
-            }
-
+        if (Auth::attempt([
+            'email' => $request->validated('email'),
+            'password' => $request->validated('email')
+        ])) {
             $user = Auth::user();
-            $token = $user->createToken('token-name')->plainTextToken;
+            $user?->tokens()->delete();
+            $token = $user?->createToken('authToken')->plainTextToken;
 
-            return response()->json(['token' => $token, 'user' => $user], 200);
-        } catch (ValidationException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            return response()->json(compact('user', 'token'));
         }
+
+        return response()->json([
+            'message' => __('auth.failed')
+        ], Response::HTTP_UNAUTHORIZED);
     }
+
+    /** TODO: Posso logar mas não consigo me cadastrar validar se deve implementar cadastro */
 }

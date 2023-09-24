@@ -3,100 +3,46 @@
 namespace App\Http\Controllers;
 
 
+use App\Events\CreatedExpenseEvent;
+use App\Http\Requests\Despesa\UpdateRequest;
 use App\Http\Requests\DespesaRequest;
 use App\Models\Despesa;
-use App\Notifications\DespesaCadastradaNotification;
 use App\Services\DespesaService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
 
+/** @TODO: não misture idiomas decida entre português e inglês, sabendo que inglês é a lingua universal dos dias de hoje */
 class DespesaController extends Controller
 {
-    private $despesaService;
-
-    public function __construct(DespesaService $despesaService)
-    {
-        $this->despesaService = $despesaService;
-    }
-
     public function index()
     {
-        $despesas = Despesa::all();
-        return response()->json($despesas, 200);
+        return response()->json(Despesa::all());
     }
 
     public function store(DespesaRequest $request): JsonResponse
     {
-        try {
+        $expense = Despesa::create($request->validated());
+        event(new CreatedExpenseEvent($expense));
 
-            $despesa = $this->despesaService->createDespesa($request->all());
-            $this->sendDespesaCreatedEmail($despesa);
-
-            return response()->json($despesa, 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Ocorreu um erro ao criar a despesa: ' . $e->getMessage()], 500);
-        }
+        return response()->json($expense, Response::HTTP_OK);
     }
 
-    private function sendDespesaCreatedEmail(Despesa $despesa): void
+    public function show(Despesa $despesa): JsonResponse
     {
-        $despesaOwner = $despesa->usuario;
-        $despesaOwner->notify(new DespesaCadastradaNotification($despesa));
-    }
-
-    public function show($id): JsonResponse
-    {
-        $despesa = Despesa::findOrFail($id);
         $this->authorize('view', $despesa);
-
-        $despesa = $this->despesaService->getById($id);
-
-        if (!$despesa) {
-            return response()->json(['error' => 'Despesa não encontrada'], 404);
-        }
-
-        return response()->json($despesa, 200);
+        return response()->json($despesa);
     }
 
-    public function update(Request $request, $id): JsonResponse
+    public function update(UpdateRequest $request, Despesa $despesa): JsonResponse
     {
-        $validator = $this->validateUpdateRequest($request);
+        $despesa->update($request->validated());
 
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 400);
-        }
-
-        $despesa = $this->despesaService->getById($id);
-
-        if (!$despesa) {
-            return response()->json(['error' => 'Despesa não encontrada'], 404);
-        }
-
-        $despesa = $this->despesaService->updateDespesa($despesa, $request->all());
-
-        return response()->json($despesa, 200);
+        return response()->json(['message' =>  __('expense.updated')]);
     }
 
-    private function validateUpdateRequest(Request $request): \Illuminate\Validation\Validator
+    public function destroy(Despesa $despesa): JsonResponse
     {
-        return Validator::make($request->all(), [
-            'descricao' => 'required|string|max:191',
-            'data' => 'required|date',
-            'valor' => 'required|numeric|min:0',
-        ]);
-    }
-
-    public function destroy($id): JsonResponse
-    {
-        $despesa = $this->despesaService->getById($id);
-
-        if (!$despesa) {
-            return response()->json(['error' => 'Despesa não encontrada'], 404);
-        }
-
-        $this->despesaService->deleteDespesa($despesa);
-
-        return response()->json(['message' => 'Despesa excluída com sucesso.'], 200);
+        $despesa->delete();
+        return response()->json(Response::HTTP_NO_CONTENT);
     }
 }

@@ -19,8 +19,8 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::prefix('despesas')->group(function () {
     Route::get('/', [DespesaController::class, 'index'])->name('despesas.index');
-    Route::get('/{id}', [DespesaController::class, 'show'])->name('despesas.show');
+    Route::get('/{despesa}', [DespesaController::class, 'show'])->name('despesas.show');
     Route::post('/', [DespesaController::class, 'store'])->name('despesas.store');
-    Route::put('/{id}', [DespesaController::class, 'update'])->name('despesas.update');
-    Route::delete('/{id}', [DespesaController::class, 'destroy'])->name('despesas.destroy');
+    Route::put('/{despesa}', [DespesaController::class, 'update'])->name('despesas.update');
+    Route::delete('/{despesa}', [DespesaController::class, 'destroy'])->name('despesas.destroy');
 });
