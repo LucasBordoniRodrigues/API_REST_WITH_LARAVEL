@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DespesaController;
 use Illuminate\Support\Facades\Route;
 
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::prefix('despesas')->group(function () {
     Route::get('/', [DespesaController::class, 'index'])->name('despesas.index');
