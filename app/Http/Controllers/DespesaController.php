@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DespesaRequest;
 use App\Models\Despesa;
+use App\Notifications\DespesaCadastradaNotification;
 use App\Services\DespesaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,9 +28,21 @@ class DespesaController extends Controller
 
     public function store(DespesaRequest $request): JsonResponse
     {
-        $despesa = $this->despesaService->createDespesa($request->all());
+        try {
 
-        return response()->json($despesa, 201);
+            $despesa = $this->despesaService->createDespesa($request->all());
+            $this->sendDespesaCreatedEmail($despesa);
+
+            return response()->json($despesa, 201);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Ocorreu um erro ao criar a despesa: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function sendDespesaCreatedEmail(Despesa $despesa): void
+    {
+        $despesaOwner = $despesa->usuario;
+        $despesaOwner->notify(new DespesaCadastradaNotification($despesa));
     }
 
     public function show($id): JsonResponse
